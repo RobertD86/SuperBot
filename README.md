@@ -1,1 +1,1 @@
-Testando Bot-master
+Criando um Bot de compra e venda na binance, no mercado Stop.
