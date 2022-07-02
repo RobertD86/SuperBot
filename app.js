@@ -97,9 +97,66 @@ async function _buy(price, amount){
         }else _newPriceReset(2, BUY_ORDER_AMOUNT * price, price)
 
     }else _newPriceReset(2, BUY_ORDER_AMOUNT * price, price)
-    
+
 }
 
+async function _sell(price){
+    const orders = store.get('orders')
+    const toSold = []
+
+    for(var i = 0; i < orders.length; i++){
+        var order = orders[i]
+        if(price >= order.sell_price){
+            order.sold_price = price
+            order.status = 'selling'
+            toSold.push(order)
+        }
+    }
+
+    if(toSold.length > 0){
+        const totalAmount = parseFloat(toSold.map(order => order.amount).reduce((prev, next) => parseFloat(prev) + parseFloat(next)))
+        if(totalAmount > 0 && parseFloat(store.get(`${MARKET1.toLowerCase()}_balance`)) >= totalAmount){
+            log(`
+                Selling ${MARKET1}
+                ===================
+                amountIn: ${totalAmount.toFixed(2)} ${MARKET1}
+                amountOut: ${parseFloat(totalAmount * price).toFixed(2)} ${MARKET2}
+            `)
+
+            const res = await client.marketSell(MARKET, totalAmount)
+            if(res && res.status === 'FILLED'){
+                const _price = parseFloat(res.fills[0].price)
+
+                for(var i = 0; i < orders.length; i++){
+                    var order = orders[i]
+                    for(var j = 0; j < toSold.length; j++){
+                        if(order.id == toSold[j].id){
+                            toSold[j].profit = (parseFloat(toSold[j].amount) * _price)
+                                -(parseFloat(toSold[j].amount) * parseFloat(toSold[j].buy_price))
+                            toSold[j].status = 'sold'
+                            orders[i] = toSold[j]    
+                        }
+                    }
+                }
+
+                store.put('start_price', _price)
+                await _updateBalances()
+
+                logColor(colors.red, '====================')
+                logColor(colors.red)
+                    `Sold ${totalAmount} ${MARKET1} for ${parseFloat(totalAmount * _price).toFixed(2)} ${MARKET2}, Price: ${_price}\n`
+                logColor(colors.red, '====================')
+
+                await _calculateProfits()
+
+                var i = orders.length
+                while(i--)
+                    if(orders[i].status === 'sold')
+                    orders.splice(i, 1)
+            }else store.put('start_price', price)
+        }else store.put('start_price', price)
+    }else store.put('start_price', price)
+}
 async function broadcast(){
     while (true){
         try {
