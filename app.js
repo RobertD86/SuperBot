@@ -39,3 +39,32 @@ async function _calculateProfits(){
 
     store.put('profits', totalSoldProfits + parseFloat(store.get('profits')))
 }
+
+function _logProfits(price){
+    const profits = parseFloat(store.get('profits'))
+    var isGainerProfit = profits > 0 ?
+    1: profits < 0 ? 2 : 0
+
+    logColor(isGainerProfit == 1?
+        colors.green: isGainerProfit == 2 ?
+            colors.red: colors.gray,
+        `Global Profits: ${parseFloat(store.get('profits')).toFixed(3)} ${MARKET2}`)
+
+        const m1Balance = parseFloat(store.get(`${MARKET1.toLowerCase()}_balance`))
+        const m2Balance = parseFloat(store.get(`${MARKET2.toLowerCase()}_balance`))
+
+        const initialBalance = parseFloat(store.get(`initial_${MARKET2.toLowerCase()}_balance`))
+        logColor(colors.gray,
+            `Balance: ${m1Balance} ${MARKET1}, ${m2Balance.toFixed(2)} ${MARKET2}, Current: ${parseFloat(m1Balance * price + m2Balance).toFixed(2)} ${MARKET2}, Initial: ${initialBalance.toFixed(2)} ${MARKET2}`)
+}
+
+async function init(){
+    if(process.argv[5] !== 'resume'){
+        const price = await client.prices(MARKET)
+        store.put('start_price', parseFloat(price[MARKET]))
+        store.put('orders', [])
+        store.put('profits', 0)
+        const balances = await _balances()
+        
+    }
+}
