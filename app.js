@@ -65,6 +65,11 @@ async function init(){
         store.put('orders', [])
         store.put('profits', 0)
         const balances = await _balances()
-        
+        store.put(`${MARKET1.toLowerCase()}_balance`, parseFloat(balances[MARKET1].available))
+        store.put(`${MARKET2.toLowerCase()}_balance`, parseFloat(balances[MARKET2].available))
+        store.put(`initial_${MARKET1.toLowerCase()}_balance`, sotre.get(`${MARKET1.toLowerCase()}_balance`))
+        store.put(`Initial_${MARKET2.toLowerCase()}_balance`, store.get(`${MARKET2.toLowerCase()}_balance`))
     }
+
+    broadcast()
 }
