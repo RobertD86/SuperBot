@@ -58,6 +58,54 @@ function _logProfits(price){
             `Balance: ${m1Balance} ${MARKET1}, ${m2Balance.toFixed(2)} ${MARKET2}, Current: ${parseFloat(m1Balance * price + m2Balance).toFixed(2)} ${MARKET2}, Initial: ${initialBalance.toFixed(2)} ${MARKET2}`)
 }
 
+async function broadcast(){
+    while (true){
+        try {
+            const mPrice = parseFloat((await client.prices(MARKET))[MARKET])
+            if(mPrice){
+                const startPrice = store.get('start_price')
+                const marketPrice = mPrice
+
+                console.clear()
+                log('===============================================================================')
+                    _logProfits(marketPrice)
+                log('===============================================================================')
+
+                log(`Prev price: ${startPrice}`)
+                log(`New price: ${marketPrice}`)
+
+                if(marketPrice < startPrice){
+                    var factor = (startPrice - marketPrice)
+                    var percent = 100 * factor / startPrice
+
+                    logColor(colors.red, `Losers: -${parseFloat(percent).toFixed(3)}% ==> -${parseFloat(factor).toFixed(4)}`)
+                    store.put('percent', `-${parseFloat(percent).toFixed(3)}`)
+
+                    if(percent >= process.env.PRICE_PERCENT)
+                        await _buy(marketPrice, BUY_ORDER_AMOUNT)
+                log('===============================================================================')        
+                }else {
+                    const factor = (marketPrice - startPrice)
+                    const percent = 100 * factor / marketPrice
+
+                    logColor(colors.green, `Gainers: +${parseFloat(percent).toFixed(3)}% ==> +${parseFloat(factor).toFixed(4)}`)
+                    store.put('percent', `+${parseFloat(percent).toFixed(3)}`)
+
+                        await _sell(marketPrice)
+
+                log('===============================================================================')        
+                }
+
+                const orders = store.get('orders')
+                if(orders.length > 0)
+                    console.log(orders[orders.length - 1])
+
+            }
+        } catch (err) { }
+        await sleep(process.env.SLEEP_TIME)
+    }
+}
+
 async function init(){
     if(process.argv[5] !== 'resume'){
         const price = await client.prices(MARKET)
