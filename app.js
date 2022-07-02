@@ -20,3 +20,22 @@ function _newPriceReset(_market, balance, price){
     if (!(parseFloat(store.get(`${market.toLowerCase()}_balance`)) > balance))
         store.put('start_price', price)
 }
+
+async function _updateBalances(){
+    const balances = await _balances()
+    store.put(`${MARKET1.toLowerCase()}_balance`, parseFloat(balances[MARKET1].available))
+    store.put(`${MARKET2.toLowerCase()}_balance`, parseFloat(balances[MARKET2].available))
+}
+
+async function _calculateProfits(){
+    const orders = store.get('orders')
+    const sold = orders.filter(order => {
+        return order.status === 'sold'
+    })
+
+    const totalSoldProfits = sold.length > 0 ?
+    sold.map(order => order.profit).reduce((prev, next) =>
+        parseFloat(prev) + parseFloat(next)) : 0
+
+    store.put('profits', totalSoldProfits + parseFloat(store.get('profits')))
+}
