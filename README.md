@@ -1,1 +1,1 @@
-Criando um Bot de compra e venda na binance, no mercado Stop.
+Criando um Bot de compra e venda na binance, no mercado spot.
